@@ -1,0 +1,7 @@
+https://docs.docker.com/engine/install/ubuntu/
+
+https://releases.ubuntu.com/20.04/
+
+https://www.windowscentral.com/how-run-linux-distros-windows-10-using-hyper-v
+
+https://docs.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker?view=sql-server-ver15&pivots=cs1-bash
