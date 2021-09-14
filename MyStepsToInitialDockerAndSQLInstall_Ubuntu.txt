@@ -1,0 +1,77 @@
+#this largely came from 3 places
+https://docs.docker.com/engine/install/ubuntu/ 
+https://docs.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker?view=sql-server-ver15&pivots=cs1-bash
+https://www.freecodecamp.org/news/cjn-how-to-connect-your-microsoft-sql-server-docker-container-with-azure-data-studio/
+
+#update the apt-get tooling
+sudo apt-get update
+
+#install various tools and configs for docker on linux
+sudo apt-get install
+sudo apt-transport-https
+sudo ca-certificates
+sudo curl
+sudo gnupg
+sudo lsb-release
+
+#add the Docker GPG (gnupg) key, used for secure communication (with docker repos in this case)
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+#setup the "stable" gpg repository (there are "test" and "nightly" repos as well but not needed for this exersize
+echo \
+  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+##Install the Docker engine
+#grab the setup files
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+
+#check available versions of the engine to install
+sudo apt-cache madison docker-ce
+
+#select the vbersion you want and add it to the string in 2 places
+#base string: sudo apt-get install docker-ce=<VERSION_STRING> docker-ce-cli=<VERSION_STRING> containerd.io
+sudo apt-get install docker-ce= 5:20.10.8~3-0~ubuntu-focal docker-ce-cli= 5:20.10.8~3-0~ubuntu-focal containerd.io
+
+#test to make sure the docker engine is responding
+sudo docker run hello-world
+
+##MSSQL
+#get the latest install of SQL Server for linux
+sudo docker pull mcr.microsoft.com/mssql/server:2019-latest
+
+#create an mssql container, the -name and -h should be custom named by you or it will assign the random GUID created as the container ID for the instance name
+#it is recommended to change the SA password after creation (via SQL cli, setup below) since the original password will be stored in plain text in the ps-eax command result
+
+sudo docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD="Cameron18" \
+   -p 1433:1433 --name sql2 -h sql2 \
+   -d mcr.microsoft.com/mssql/server:2019-latest
+
+#confirm creation AND to view available mssql docker containers
+sudo docker ps -a
+
+##setup the MSSQL cli for connecting to the engine and admin/querying
+#get nodejs and npm
+sudo apt-get install nodejs
+sudo apt-get install npm
+
+#verify versions and install happened
+node -v
+npm -v
+
+#install the sql cli via npm
+sudo npm install -g sql-cli
+
+
+##connect to the MSSQL server instance in your container
+mssql -u sa -p Cameron18
+
+#verify
+select @@servername
+
+##you can now download the azure data studio, and hopefully ssms, on the VM and connect with the following
+server: localhost, 1433
+authentication type: SQL Login
+User name: sa
+Password: Cameron18
