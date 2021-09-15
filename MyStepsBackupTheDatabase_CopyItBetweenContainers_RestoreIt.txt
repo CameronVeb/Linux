@@ -1,0 +1,64 @@
+##helpful links for this
+https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-backup-and-restore-database?view=sql-server-ver15
+https://www.cyberciti.biz/faq/linux-list-just-directories-or-directory-names/
+https://help.ubuntu.com/community/UsingTheTerminal
+https://docs.microsoft.com/en-us/sql/linux/tutorial-restore-backup-in-sql-server-container?view=sql-server-ver15
+https://stackoverflow.com/questions/20813486/exploring-docker-containers-file-system
+https://docs.docker.com/engine/reference/commandline/cp/
+https://linuxhandbook.com/exit-docker-container/
+
+#start the docker container (sql2), using port 1433, which means i should have created
+#sql1 on a different port so that they could be up at the same time
+sudo docker start sql2
+
+#first, create the database (dockerBackUpRestoreTest)
+
+#second, create table (dummy)
+
+#third, insert a single row into the table ('Hello')
+
+#fourth, create new directory location to hold the backup
+#THIS IS WHERE I BANGED MY HEAD AGAINST THE DESK FOR 2 HOURS
+#...you need to think about the container having its own directory system...
+#i was thinking as if it was all one and the same even though i actually know better
+#had an AH HA moment when i remembered that....sooooooo skip to #How to do it right
+  #show what is in current directory
+  sudo ls
+  #show current directory name and path
+  sudo pwd
+  #create new common directory folder under my user name
+  sudo mkdir backups
+  #navigate into the new folder
+  cd /home/cameron/backups
+  #verify it is usable
+  sudo pwd
+
+	#how to do it right - technically happened after i finished step 5
+	#enter the docker file/directory system
+	docker exec -it sql2 bash
+	ls
+	cd var
+	ls
+	cd opt
+	ls
+	cd mssql
+	cd backups
+	##BOOM FOUND THE BACKUP I TOOK.....
+
+#fifth, take a SQL database backup and store it in the new directory
+backup database dockerBackUpRestoreTest to disk='/var/opt/mssql/backups/dockerBackupRestoreTest.bak' with noformat, nowait, name='dockerBackupRestoreTest',skip, nounload, norewind,stats=10
+
+#sixth, copy the backup from the docker container to the linux host directory
+docker cp sql2:/var/opt/mssql/backups/dockerBackupRestoreTest.bak /var/opt/mssql/backups
+
+#seventh, offline the sql2 container (since i made all containers on port 1433 like a noob, only one could use the port at a time)
+docker stop sql2
+
+#eigth, start the sql 1 container
+docker start sql1
+
+#ninth copy the back from the linux host directory into the sql1 container
+docker cp /var/opt/mssql/backups/dockerBackupRestoreTest.bak sql2:/var/opt/mssql
+
+#tenth, restore the database into sql server on the sql1 container
+restore database dockerBackupRestoreTest from disk='/var/opt/mssql/dockerBackupRestoreTest.bak' withrecovery;
